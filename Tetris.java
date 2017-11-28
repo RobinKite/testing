@@ -8,6 +8,67 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Random;
 
+import java.awt.Canvas;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+@SuppressWarnings("serial")
+public class Tetris extends JPanel implements Runnable {
+
+  static Tetris tetris = new Tetris();
+  static JFrame okno = new JFrame("Tetris");
+  static Thread watek = new Thread(tetris);
+
+  static Plansza plansza = new Plansza();
+
+  boolean start = false;
+  short op = 50;
+
+  Tetris() {
+    super();
+    setBackground(Color.DARK_GRAY);
+    setLayout(null);
+    start = true;
+  }
+
+  public static void main(String[] args) {
+    okno.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    okno.add(tetris);
+    okno.setSize(600, 600);
+    okno.setLocationRelativeTo(null);
+    okno.setResizable(false);
+    plansza.setLocation(10, 10);
+    tetris.add(plansza);
+    okno.setVisible(true);
+    watek.start();
+  }
+
+  @SuppressWarnings("static-access")
+  @Override
+  public void run() {
+    long wait, startCzas, cyklCzas;
+    while (start)
+    {
+      startCzas = System.nanoTime();
+      plansza.run();
+      cyklCzas = System.nanoTime() - startCzas;
+      wait = op - cyklCzas / 1000000;
+      if (wait<=0) wait = 3;
+      try { watek.sleep(op);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      System.out.println(op+" > "+wait);
+    }
+  }
+}
+
+
 @SuppressWarnings("serial")
 public class Plansza extends ACanvas implements MouseListener, KeyListener{
 
@@ -137,4 +198,83 @@ public class Plansza extends ACanvas implements MouseListener, KeyListener{
         }
     }
 
+}
+
+public class Klocek {
+
+    public boolean[][] tab = new boolean[4][4];
+    private boolean[][] tabE = new boolean[4][4];
+    byte akKlocek;
+
+    Klocek()
+    {
+        setKlocek((byte) 0);
+    }
+
+    public void setKlocek(byte k)
+    {
+        akKlocek = k;
+        for (byte x=0; x<4; x++)
+            for (byte y=0; y<4; y++)
+                tab[y][x] = Klocki.KLOCKI[akKlocek] [x][y];
+    }
+
+    public void obrut()
+    {
+        for (byte x=0; x<4; x++)
+            for (byte y=0; y<4; y++)
+                tabE[x][y] = tab[x][y];
+        for (byte x=0; x<4; x++)
+            for (byte y=0; y<4; y++)
+                tab[y][3-x] = tabE[x][y];
+
+    }
+}
+
+public class Klocki {
+    final static boolean[][][] KLOCKI =
+            {
+                    {
+                            {false,false,false,false},  //....
+                            {true,true,true,false},     //###.
+                            {false,false,true,false},   //..#.
+                            {false,false,false,false}   //....
+                    },
+                    {
+                            {false,false,false,false},  //....
+                            {false,false,false,false},  //###.
+                            {false,false,false,false},  //.#..
+                            {false,false,false,false}   //....
+                    },
+            };
+}
+
+@SuppressWarnings("serial")
+public abstract class ACanvas extends Canvas {
+
+    BufferedImage image;
+    Graphics2D grafika;
+
+    ACanvas(short sze, short wys) {
+        super();
+        setSize(sze, wys);
+        image = new BufferedImage(sze, wys, BufferedImage.TYPE_INT_RGB);
+        grafika = (Graphics2D) image.getGraphics();
+    }
+
+
+    public abstract void drawImage();
+
+        private void naEkran()
+    {
+        Graphics g = getGraphics();
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+    }
+
+    public void run()
+    {
+        drawImage();
+        naEkran();
+    }
 }
